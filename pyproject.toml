@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "big-data-analysis-project"
+version = "0.1.0"
+description = ""
+authors = ["AStaniszewski <staniszewski01adam@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+praw = "^7.8.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
