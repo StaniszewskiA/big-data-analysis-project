@@ -1,0 +1,46 @@
+version: '3.8'
+services:
+  zookeeper:
+    image: bitnami/zookeeper:latest
+    container_name: zookeeper
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+      - ZOO_ENABLE_AUTH=no
+    ports:
+      - "2181:2181"
+
+  kafka:
+    image: bitnami/kafka:latest
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      - KAFKA_BROKER_ID=1
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://0.0.0.0:9092
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9092
+      - ALLOW_PLAINTEXT_LISTENER=yes
+
+  influxdb:
+    image: influxdb:2.6
+    container_name: influxdb
+    ports:
+      - "8086:8086"
+    environment:
+      - DOCKER_INFLUXDB_INIT_USERNAME=admin
+      - DOCKER_INFLUXDB_INIT_PASSWORD=admin123
+      - DOCKER_INFLUXDB_INIT_ORG=myorg
+      - DOCKER_INFLUXDB_INIT_BUCKET=mybucket
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    depends_on:
+      - influxdb
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin123

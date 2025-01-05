@@ -1,1 +1,2 @@
-from .reddit_api_worker import RedditApiWorker
+from .reddit_api_producer import RedditApiWorker
+from .kafka_influx_consumer import KafkaInfluxConsumer
