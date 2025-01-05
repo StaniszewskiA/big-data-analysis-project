@@ -123,9 +123,11 @@ docker exec -it kafka bash
 
 kafka-console-producer.sh \
   --broker-list localhost:9092 \
-  --topic reddit_posts
+  --topic reddit_word_counts \
+  --property "parse.key=true" \
+  --property "key.separator=:"
 ```
-Type some messages, press Enter after each. Ctrl+C to exit.
+Type some messages. (i.e. python:10) press Enter after each. Ctrl+C to exit.
 
 Consume messages:
 ```bash
