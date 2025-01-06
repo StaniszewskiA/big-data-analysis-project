@@ -65,4 +65,9 @@ def main():
         stream_process.wait()
 
 if __name__ == "__main__":
+    """
+    TODO: I'm not sure whether this is working correctly.
+    I would strongly recommend running all of these 
+    scripts separately.
+    """
     main()

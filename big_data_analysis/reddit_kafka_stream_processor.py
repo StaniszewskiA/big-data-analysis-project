@@ -1,14 +1,14 @@
 import json
 import logging
 
-from confluent_kafka import Consumer, Producer, KafkaException
+from kafka import KafkaConsumer, KafkaProducer
 
 class RedditKafkaStreamProcessor:
     """
-    Handles Kafka streams
+    Handles Kafka streams.
     """
     def __init__(
-        self, 
+        self,
         kafka_bootstrap_servers: str, 
         input_topic: str, 
         output_topic: str
@@ -16,16 +16,20 @@ class RedditKafkaStreamProcessor:
         self.kafka_bootstrap_servers = kafka_bootstrap_servers
         self.input_topic = input_topic
         self.output_topic = output_topic
-        self.consumer = Consumer({
-            'bootstrap.servers': self.kafka_bootstrap_servers,
-            'group.id': 'reddit_consumer_group',
-            'auto.offset.reset': 'earliest'
-        })
-        self.producer = Producer(
-            {'bootstrap.servers': self.kafka_bootstrap_servers}
+
+        self.consumer = KafkaConsumer(
+            self.input_topic,
+            bootstrap_servers=self.kafka_bootstrap_servers,
+            group_id='reddit_consumer_group',
+            auto_offset_reset='earliest',
+            enable_auto_commit=True,
+            value_deserializer=lambda x: json.loads(x.decode('utf-8'))
         )
 
-        self.consumer.subscribe([self.input_topic])
+        self.producer = KafkaProducer(
+            bootstrap_servers=self.kafka_bootstrap_servers,
+            value_serializer=lambda x: json.dumps(x).encode('utf-8')
+        )
 
     def process_messages(self):
         """
@@ -35,17 +39,12 @@ class RedditKafkaStreamProcessor:
         word_counts: dict[str, int] = {}
 
         try:
-            while True:
-                msg = self.consumer.poll(timeout=1.0)
-                if msg is None:
-                    continue
-                if msg.error:
-                    raise KafkaException(msg.error())
-                
-                message_data = json.loads(msg.value().decode('utf-8'))
+            logging.info(f"Starting to process messages from topic '{self.input_topic}'...")
+            for message in self.consumer:
+                message_data = message.value
                 title = message_data.get("title", "Unknown Title")
                 
-                words = title.lower().split()  
+                words = [word.strip() for word in title.lower().split()]
                 
                 for word in words:
                     if word in word_counts:
@@ -59,13 +58,12 @@ class RedditKafkaStreamProcessor:
                 
         except KeyboardInterrupt:
             logging.info("Stopped Kafka stream processing")
-
         finally:
             self.consumer.close()
 
     def send_to_kafka(self, word_counts: dict):
         """
-        Sends word count data to the "reddit_count" topic.
+        Sends word count data to the output topic.
         """
         try:
             for word, count in word_counts.items():
@@ -73,7 +71,7 @@ class RedditKafkaStreamProcessor:
                     'word': word,
                     'count': count
                 }
-                self.producer.produce(self.output_topic, value=json.dumps(message).encode('utf-8'))
+                self.producer.send(self.output_topic, value=message)
                 logging.info(f"Sent to {self.output_topic}: {word} => {count}")
             self.producer.flush()
         except Exception as e:

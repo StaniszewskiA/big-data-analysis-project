@@ -11,7 +11,7 @@ if __name__ == "__main__":
 
     kafka_bootstrap_servers = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
     input_topic = os.getenv("KAFKA_INPUT_TOPIC", "reddit_posts")
-    output_topic = os.getenv("KAFKA_OUTPUT_TOPIC", "reddit_count")
+    output_topic = os.getenv("KAFKA_OUTPUT_TOPIC", "reddit_word_counts")
 
     stream_processor = RedditKafkaStreamProcessor(
         kafka_bootstrap_servers=kafka_bootstrap_servers,
