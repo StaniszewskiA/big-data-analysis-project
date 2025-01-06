@@ -1,5 +1,6 @@
 import json
 import logging
+
 from confluent_kafka import Consumer, Producer, KafkaException
 
 class RedditKafkaStreamProcessor:
@@ -15,18 +16,11 @@ class RedditKafkaStreamProcessor:
         self.kafka_bootstrap_servers = kafka_bootstrap_servers
         self.input_topic = input_topic
         self.output_topic = output_topic
-        
-        logging.basicConfig(level=logging.DEBUG)
-        logging.getLogger('confluent_kafka').setLevel(logging.DEBUG)
-
         self.consumer = Consumer({
             'bootstrap.servers': self.kafka_bootstrap_servers,
             'group.id': 'reddit_consumer_group',
-            'auto.offset.reset': 'earliest',
-            'debug': 'all', 
+            'auto.offset.reset': 'earliest'
         })
-
-        # Initialize producer
         self.producer = Producer(
             {'bootstrap.servers': self.kafka_bootstrap_servers}
         )
@@ -35,7 +29,7 @@ class RedditKafkaStreamProcessor:
 
     def process_messages(self):
         """
-        Counts keyword within the stream and sends the count 
+        Counts keyword occurrences within the stream and sends the count 
         to a specified topic.
         """
         word_counts: dict[str, int] = {}
@@ -44,61 +38,43 @@ class RedditKafkaStreamProcessor:
             while True:
                 msg = self.consumer.poll(timeout=1.0)
                 if msg is None:
-                    logging.debug("No message received within timeout.")
                     continue
-                
-                if msg.error():
-                    logging.error(f"Consumer error: {msg.error()}")
+                if msg.error:
                     raise KafkaException(msg.error())
                 
-                logging.debug(f"Received message: {msg.value()}")
-
-                try:
-                    message_data = json.loads(msg.value().decode('utf-8'))
-                except json.JSONDecodeError as e:
-                    logging.error(f"Error decoding JSON: {e}")
-                    continue
-                
+                message_data = json.loads(msg.value().decode('utf-8'))
                 title = message_data.get("title", "Unknown Title")
-                logging.debug(f"Extracted title: {title}")
+                
+                words = title.lower().split()  
+                
+                for word in words:
+                    if word in word_counts:
+                        word_counts[word] += 1
+                    else:
+                        word_counts[word] = 1
 
-                if title in word_counts:
-                    word_counts[title] += 1
-                else:
-                    word_counts[title] = 1
+                logging.info(f"Processed post: {title}. Current word counts: {word_counts}")
 
-                logging.info(f"Processed post: {title}. Count: {word_counts[title]}")
-
-                self.send_to_kafka(title, word_counts[title])
-
+                self.send_to_kafka(word_counts)
+                
         except KeyboardInterrupt:
             logging.info("Stopped Kafka stream processing")
 
-        except KafkaException as e:
-            logging.error(f"KafkaException: {e}")
-        
         finally:
-            logging.debug("Closing consumer.")
             self.consumer.close()
 
-    def send_to_kafka(
-        self, 
-        word,
-        count
-    ):
+    def send_to_kafka(self, word_counts: dict):
         """
-        Sends data to the "reddit_count" topic.
+        Sends word count data to the "reddit_count" topic.
         """
-        message = {
-            'word': word,
-            'count': count
-        }
-
         try:
-            logging.debug(f"Sending message to Kafka: {message}")
-            self.producer.produce(self.output_topic, value=json.dumps(message).encode('utf-8'))
+            for word, count in word_counts.items():
+                message = {
+                    'word': word,
+                    'count': count
+                }
+                self.producer.produce(self.output_topic, value=json.dumps(message).encode('utf-8'))
+                logging.info(f"Sent to {self.output_topic}: {word} => {count}")
             self.producer.flush()
-            logging.info(f"Sent to {self.output_topic}: {word} => {count}")
-
         except Exception as e:
             logging.error(f"Error sending to Kafka: {e}")
