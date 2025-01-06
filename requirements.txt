@@ -2,3 +2,4 @@
 praw              # For accessing Reddit API
 kafka-python      # For producing/consuming Kafka messages
 influxdb-client   # For writing/reading data to InfluxDB 2.x
+confluent-kafka   # For managing streams

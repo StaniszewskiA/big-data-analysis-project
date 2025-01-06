@@ -1,5 +1,9 @@
-import os
 import logging
+import os
+import sys
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
+
 from big_data_analysis import KafkaInfluxConsumer
 
 if __name__ == "__main__":
