@@ -52,8 +52,16 @@ class KafkaInfluxConsumer:
             try:
                 # message.key is the word, message.value is the count (assuming your Streams app
                 # outputs a key=word, value=count). Adjust parsing if your data structure differs.
-                word = message.key.decode('utf-8') if message.key else "unknown"
-                count = message.value
+
+                data = message.value
+                if not isinstance(data, dict):
+                    raise ValueError(f"Expected message.value to be a dictionary, got: {type(data)}")
+                
+                word = data.get('word', 'unknown')
+                count = data.get('count', 0)
+
+                if not isinstance(count, (int, float)):
+                    raise TypeError(f"Unsupported type for 'count': {type(count)}")
 
                 point = Point("reddit_word_counts") \
                     .tag("word", word) \
