@@ -1,6 +1,6 @@
 # Big data pipeline project
 
-This repository demonstrates a **big data pipeline** that fetches data from the **Reddit API**, uses **Kafka Streams** to analyze word frequency, stores results in **InfluxDB**, and visualizes them in **Grafana**.
+This repository demonstrates a **big data pipeline** that fetches data from the **Reddit API**, processes the data to analyze word frequency, stores results in **InfluxDB**, and visualizes them in **Grafana**.
 
 ## Table of Contents
 - [Big data pipeline project](#big-data-pipeline-project)
@@ -29,7 +29,6 @@ This project focuses on **real-time data ingestion and analysis** using:
 
 - **Reddit API** to fetch live posts and comments.
 - **Apache Kafka** for streaming data ingestion.
-- **Kafka Streams** (Scala/Java) to process and compute word frequencies (currently work-in-progress).
 - **InfluxDB** as a time-series database to store aggregated metrics (word counts, etc.).
 - **Grafana** to visualize the trends and results in real time.
 
@@ -175,12 +174,7 @@ Add a Data Source:
 - Once configured, you can create dashboards and panels to visualize the data streaming in.
 
 ## 4 Future Improvements
-
-Implement Kafka Streams: Create a Scala/Java application to read from reddit_posts and write aggregated word counts (or other analyses) to reddit_word_counts.
-
 Add NLP: Enhance the pipeline with sentiment analysis or entity extraction.
 Automate Producer/Consumer: 
-
 Containerize producer/consumer scripts so they run automatically rather than by hand.
-
 Security: For production, enable SSL/TLS for Kafka, secure tokens in a secrets manager, etc.
